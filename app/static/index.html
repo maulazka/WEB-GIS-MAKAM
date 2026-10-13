@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebGIS TPU Keputih</title>
+    <meta
+      name="description"
+      content="Peta inventarisasi makam dan monitoring pendataan tiga blok TPU Keputih Surabaya."
+    />
+    <link rel="icon" href="/static/SurabayaLogo.svg" />
+    <link rel="stylesheet" href="/static/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/static/style.css?v=7-nav" />
+  </head>
+  <body>
+    <!-- Header: main navigation and admin entry -->
+    <header class="header">
+      <a class="brand" href="/" aria-label="WebGIS Keputih">
+        <img
+          class="brand-icon"
+          src="/static/SurabayaLogo.svg"
+          alt="Logo Universitas Negeri Surabaya"
+          width="48"
+          height="48"
+        />
+        <span>
+          KEPUTIH
+          <small>Inventarisasi Makam</small>
+        </span>
+      </a>
+      <nav aria-label="Navigasi utama">
+        <button data-view="home" class="nav active" aria-current="page">
+          Beranda
+        </button>
+        <button data-view="map" class="nav">Peta</button>
+        <button data-view="table" class="nav">Data makam</button>
+        <button data-view="stats" class="nav">Statistik</button>
+        <button data-view="about" class="nav">Tentang</button>
+      </nav>
+      <button id="admin-toggle" class="button outline hidden">0000</button>
+    </header>
+    <div class="summary">
+      <span>TPU Keputih, Surabaya</span>
+      <span id="summary-total">Memuat data…</span>
+      <span id="summary-complete"></span>
+    </div>
+    <main class="workspace workspace-wide" id="workspace">
+      <aside class="filters hidden" id="search-sidebar">
+        <div class="section-label">TEMUKAN MAKAM</div>
+        <h1>Pencarian makam</h1>
+        <form id="search-form">
+          <label for="q">Nama atau ID makam</label>
+          <input id="q" placeholder="Ketik nama atau ID…" autocomplete="off" />
+          <label for="block">Blok</label>
+          <select id="block">
+            <option value="">Semua blok</option>
+          </select>
+          <label for="status">Status data</label>
+          <select id="status">
+            <option value="">Semua status</option>
+            <option value="complete">Lengkap</option>
+            <option value="incomplete">Belum lengkap</option>
+            <option value="unverified">Belum diverifikasi</option>
+          </select>
+          <fieldset>
+            <legend>Tahun meninggal</legend>
+            <div class="two">
+              <input
+                id="year-from"
+                type="number"
+                min="1"
+                max="9999"
+                placeholder="Dari"
+                aria-label="Tahun awal"
+              />
+              <input
+                id="year-to"
+                type="number"
+                min="1"
+                max="9999"
+                placeholder="Sampai"
+                aria-label="Tahun akhir"
+              />
+            </div>
+          </fieldset>
+          <div class="two">
+            <button type="submit" class="button primary">Cari makam</button>
+            <button type="button" id="reset" class="button outline">
+              Reset
+            </button>
+          </div>
+        </form>
+        <div class="result-heading">
+          <strong>Hasil pencarian</strong>
+          <span id="result-count">0</span>
+        </div>
+        <div id="results" class="results"><p class="muted">Memuat…</p></div>
+        <div class="sidebar-footer">
+          Progress sementara 3 blok makam TPU Keputih.
+          <br />
+          Identitas dan foto diisi setelah survei.
+        </div>
+      </aside>
+      <section class="content">
+        <!-- Beranda: Peta, Tabel Infografis, and Tentang -->
+        <section id="view-home" class="view home-view">
+          <div class="home-hero">
+            <div class="home-copy">
+              <p class="home-eyebrow">WEBGIS MAKAM · TPU KEPUTIH, SURABAYA</p>
+              <h1>BERANDA</h1>
+              <p class="home-description">
+                Selamat datang di WebGIS TPU Keputih.
+              </p>Sistem ini menyediakan informasi lokasi dan data makam melalui peta interaktif. Gunakan menu yang tersedia untuk mencari makam, melihat data, dan menjelajahi informasi pemakaman dengan lebih mudah.</p>
+                Inventarisasi makam TPU Keputih, Surabaya.
+              </p>
+              <div class="home-actions">
+                <button
+                  type="button"
+                  data-view="map"
+                  class="home-action home-action-primary"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"
+                    ></path>
+                  </svg>
+                  Peta
+                </button>
+                <button
+                  type="button"
+                  data-view="infographics"
+                  class="home-action"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 3v18h17M8 16V9m5 7V5m5 11v-5"></path>
+                  </svg>
+                  Tabel Infografis
+                </button>
+                <button type="button" data-view="about" class="home-action">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 11v6m0-10v1"></path>
+                  </svg>
+                  Tentang
+                </button>
+              </div>
+              <dl class="home-totals">
+                <div>
+                  <dt>Makam terdaftar</dt>
+                  <dd id="home-total">Memuat…</dd>
+                </div>
+                <div>
+                  <dt>Blok terdaftar</dt>
+                  <dd id="home-blocks">Memuat…</dd>
+                </div>
+                <div>
+                  <dt>Data lengkap</dt>
+                  <dd id="home-complete">Memuat…</dd>
+                </div>
+              </dl>
+            </div>
+            <figure class="home-preview">
+              <figcaption>
+                <span>TPU Keputih</span>
+                <span id="home-basemap-label">Keputih, Kec. Sukolilo, Kota Surabaya</span>
+              </figcaption>
+              <img
+                id="home-preview-map"
+                src = "/static/Beranda.png"
+                aria-label="Pratinjau peta lokasi pendataan"
+              ></img>
+              <p id="home-preview-status">Memuat cakupan pendataan…</p>
+            </figure>
+          </div>
+        </section>
+        <!-- Peta -->
+        <section id="view-map" class="view map-view hidden">
+          <div class="map-toolbar">
+            <span id="map-label">PETA INVENTARISASI MAKAM KEPUTIH</span>
+            <div>
+              <label for="mode" class="sr-only">Warna peta</label>
+              <select id="mode">
+                <option value="block">Warna menurut blok</option>
+                <option value="status">Kelengkapan data</option>
+                <option value="year">Periode meninggal</option>
+                <option value="density">Kepadatan blok</option>
+              </select>
+              <button id="fit" class="button outline">Zoom Out</button>
+            </div>
+          </div>
+          <div class="layer-bar" id="layer-bar"></div> 
+          <div class="legend" id="legend"></div>
+          <div id="map"></div>
+          <div id="map-empty" class="map-empty">
+            <span class="empty-icon">⌖</span>
+            <h2>Data makam belum dimasukkan</h2>
+            <p>Data belum dimasukkan.</p>
+            <button id="empty-admin" class="button primary">
+              Member butuh Admin
+            </button>
+          </div>
+        </section>
+        <!-- Data makam -->
+        <section id="view-table" class="view hidden padded">
+          <div class="page-title">
+            <div class="section-label">INVENTARISASI</div>
+            <h1>Data makam</h1>
+            <p class="muted">
+              Daftar mengikuti pencarian dan filter yang dipilih.
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID makam</th>
+                  <th>Nama</th>
+                  <th>Blok</th>
+                  <th>Tanggal wafat</th>
+                  <th>Kelengkapan</th>
+                  <th>Verifikasi</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="prev" class="button outline">Sebelumnya</button>
+            <span id="page-label"></span>
+            <button id="next" class="button outline">Berikutnya</button>
+          </div>
+        </section>
+        <!-- Statistik: summary cards and table -->
+        <section id="view-stats" class="view hidden padded">
+          <div class="page-title">
+            <div class="section-label">MONITORING</div>
+            <h1>Kondisi pendataan</h1>
+            <p class="muted">Ringkasan seluruh data yang sudah dimasukkan.</p>
+            <p id="stats-updated" class="muted" aria-live="polite">
+              Memuat ringkasan…
+            </p>
+          </div>
+          <div id="stats-cards" class="cards"></div>
+          <h2>Ringkasan per blok</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Blok</th>
+                  <th>Jumlah makam</th>
+                  <th>Luas blok (m²)</th>
+                  <th>Makam / 1.000 m²</th>
+                  <th>Data lengkap</th>
+                </tr>
+              </thead>
+              <tbody id="block-stats"></tbody>
+            </table>
+          </div>
+          <h2>Tahun meninggal</h2>
+          <div id="year-chart" class="year-chart"></div>
+          <p class="muted">
+            Kepadatan menggunakan luas batas blok. Tanggal wafat menunjukkan
+            tahun meninggal, bukan waktu penambahan makam.
+          </p>
+        </section>
+        <section
+          id="view-infographics"
+          class="view hidden padded infographic-view"
+        >
+          <div class="infographic-heading page-title">
+            <div>
+              <div class="section-label">RINGKASAN PENDATAAN</div>
+              <h1>Tabel Infografis</h1>
+              <p class="muted">
+                Distribusi dan kondisi seluruh data makam yang sudah dimasukkan.
+              </p>
+              <p id="infographic-updated" class="muted" aria-live="polite">
+                Memuat ringkasan…
+              </p>
+            </div>
+            <button type="button" data-view="table" class="button outline">
+              Lihat data makam
+            </button>
+            <button type="button" data-view="home" class="button outline">
+              Kembali ke Beranda
+            </button>
+          </div>
+          <div id="infographic-empty" class="infographic-empty hidden">
+            Data makam belum dimasukkan. Grafik dan tabel akan terisi setelah
+            data diimpor melalui admin.
+          </div>
+          <div id="infographic-cards" class="cards"></div>
+          <div class="infographic-grid">
+            <article class="chart-card">
+              <h2>Jumlah makam per blok</h2>
+              <p class="muted">
+                Jumlah polygon makam pada setiap blok terdaftar.
+              </p>
+              <div id="block-chart" class="block-chart"></div>
+            </article>
+            <article class="chart-card">
+              <h2>Kelengkapan data</h2>
+              <p class="muted">
+                Data lengkap memiliki nama, tanggal wafat, blok, dan foto.
+              </p>
+              <div id="completion-chart"></div>
+            </article>
+            <article class="chart-card">
+              <h2>Verifikasi pendataan</h2>
+              <p class="muted">
+                Status pemeriksaan dicatat terpisah dari kelengkapan.
+              </p>
+              <div id="verification-chart"></div>
+            </article>
+            <article class="chart-card">
+              <h2>Distribusi tahun wafat</h2>
+              <p class="muted">
+                Tahun yang belum diketahui tetap tercantum dalam grafik.
+              </p>
+              <div id="infographic-year-chart" class="year-chart"></div>
+            </article>
+          </div>
+          <div class="infographic-table-heading">
+            <h2>Ringkasan per blok</h2>
+            <p class="muted">
+              Luas dan kepadatan dihitung dari batas blok yang diimpor.
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">
+                Ringkasan jumlah, luas, kepadatan, dan kelengkapan makam per
+                blok.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Blok</th>
+                  <th scope="col">Jumlah makam</th>
+                  <th scope="col">Persentase</th>
+                  <th scope="col">Luas blok (m²)</th>
+                  <th scope="col">Makam / 1.000 m²</th>
+                  <th scope="col">Data lengkap</th>
+                </tr>
+              </thead>
+              <tbody id="infographic-block-stats"></tbody>
+            </table>
+          </div>
+          <p class="muted">
+            Statistik mencakup seluruh data. Tanggal wafat menunjukkan tahun
+            meninggal, bukan waktu penambahan data. Filter pencarian berlaku
+            pada Peta dan Data makam.
+          </p>
+        </section>
+        <!-- Tentang -->
+        <section id="view-about" class="view hidden padded">
+          <div class="page-title">
+            <div class="section-label">TENTANG PROYEK</div>
+            <h1>WebGIS TPU Keputih</h1>
+          </div>
+          <div class="prose">
+            <p>
+              WebGIS TPU Keputih merupakan sistem informasi geografis berbasis web yang dikembangkan untuk membantu pengelolaan, penyajian, dan pencarian informasi makam secara digital.
+            </p>
+             Sistem ini memanfaatkan data spasial berupa polygon makam, pembagian blok pemakaman, serta data atribut yang terhubung dengan setiap lokasi makam. Melalui peta interaktif, pengguna dapat melihat posisi makam, mengetahui blok pemakaman, mencari data tertentu, serta membuka informasi yang berkaitan dengan makam yang dipilih.
+            </p>
+              Data polygon makam diperoleh melalui proses ekstraksi foto udara menggunakan metode Mask R-CNN pada ArcGIS Pro. Hasil ekstraksi kemudian diperiksa dan disesuaikan kembali melalui proses pengolahan GIS untuk memastikan bentuk, posisi, dan batas polygon sesuai dengan kondisi lapangan. Setiap polygon diberikan ID makam sebagai identitas utama dalam sistem.
+              </p>
+              ID makam tersebut digunakan untuk menghubungkan data spasial dengan informasi hasil survei lapangan. Data seperti identitas jenazah, keterangan makam, dan dokumentasi foto dapat ditambahkan ke dalam sistem berdasarkan ID yang sama. Dengan metode ini, informasi lokasi dan data atribut dapat dikelola secara terintegrasi dan lebih terstruktur.
+            </p>
+              Selain sebagai media visualisasi, WebGIS Makam dapat digunakan sebagai sarana pendukung pengelolaan data pemakaman. Informasi yang sebelumnya tersimpan secara terpisah dapat disajikan dalam satu sistem yang menghubungkan data lokasi dengan data atribut.
+            </p>
+              Dengan adanya WebGIS TPU Keputih, proses pencarian lokasi, pengelolaan informasi, dan penyajian data pemakaman diharapkan dapat dilakukan secara lebih terstruktur, mudah diakses, dan lebih efisien.
+            </p>
+            <h2>Lingkup informasi</h2>
+            <p>
+              Pencarian lokasi, informasi makam, distribusi periode meninggal,
+              kepadatan per blok, serta kelengkapan dan verifikasi data.
+            </p>
+            <h2>Pelaksanaan</h2>
+            <p>
+              Mini project magang yang dibuat oleh Mahasiswa Program Studi,
+              Pendidikan Geografi angkatan 24, Universitas Negeri Surabaya, di
+              PT Geosolution Pratama Nusantara.
+            </p>
+            <h2>Status data</h2>
+            <p>
+              Kolom yang belum memiliki data ditampilkan sebagai belum didata.
+              Kelengkapan dihitung dari nama, tanggal wafat, blok, dan adanya
+              foto. Verifikasi diperiksa secara terpisah.
+            </p>
+          </div>
+        </section>
+        <!-- Admin: preserve the project owner's labels and descriptions -->
+        <section id="view-admin" class="view hidden padded">
+          <div class="page-title">
+            <div class="section-label">TAB SUKII LIARR</div>
+            <h1>Hadeuuuh, Suki mau join Member loh yaaa....</h1>
+            <p class="muted">ID permen oi sukiii, jomoknyee kau nii....</p>
+          </div>
+          <form id="login-form" class="panel login">
+            <h2>FORBIDEN 404 ERROR</h2>
+            <label for="password">Forbiden 404 not found</label>
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+            <button class="button primary">
+              SUKI LIAR DILARANG MENDEKAT!!!
+            </button>
+            <p class="muted">
+              Admin butuh member baik, dan member baik butuh Admin.
+            </p>
+          </form>
+          <div id="admin-panel" class="hidden">
+            <div class="admin-bar">
+              <span>Hormat kepada ADMIN 07</span>
+              <button id="logout" class="button outline">
+                AKU SUKIIII....
+              </button>
+            </div>
+            <div class="admin-grid">
+              <form id="geo-form" class="panel">
+                <h2>Ambatukam awal</h2>
+                <label for="geo-kind">Suki apakah?</label>
+                <select id="geo-kind">
+                  <option value="blok">BAJU anti JOMOK</option>
+                  <option value="makam">Tempat JOMOK</option>
+                </select>
+                <label for="geo-file">Kudu G-JomokSon</label>
+                <input
+                  id="geo-file"
+                  type="file"
+                  accept=".geojson,.json"
+                  required
+                />
+                <p class="muted">
+                  Blok: id atau BLOK, name. Makam: ID, id_makam atau id, blok,
+                  BLOK atau block_id. ID yang sudah ada tidak ditimpa.
+                </p>
+                <button class="button primary">Mas Amba awal1</button>
+              </form>
+              <form id="csv-form" class="panel">
+                <h2>Baju yang Baru dibeli</h2>
+                <p class="muted">
+                  Gausah mikir terkait Baju jenis apa, Baju sama bakal ditimpa kok. Kalo mikir, Nimpa MASS!!!
+                </p>
+                <label for="csv-file">Makanan ES CiViC</label>
+                <input id="csv-file" type="file" accept=".csv" required />
+                <button class="button primary">Intip DOKSLI</button>
+                <button type="button" id="export" class="button outline">
+                  DOKSLI yang dijanjikan 3000 tahun yang lalu.
+                </button>
+                <a href="/static/template-atribut.csv" download>
+                  Csvivivivivivvivi
+                </a>
+              </form>
+            </div>
+            <section class="panel imagery-panel">
+              <h2>Foto Rambut Mas Gatot</h2>
+              <p id="raster-limit" class="muted">
+                SUKIII SUKII KAMU PASTI WAHYUDI.
+              </p>
+              <p
+                id="raster-upload-details"
+                class="muted"
+                role="status"
+                aria-live="polite"
+              >
+                Memotong rambut Mas Gatot…
+              </p>
+              <p id="raster-capability" class="muted">
+                Dana di proses BOSKUUU!!!
+              </p>
+              <p
+                id="raster-reader-details"
+                class="muted"
+                role="status"
+                aria-live="polite"
+              >
+                Menunggu tukang cukur Mas Rusdi…
+              </p>
+              <form id="imagery-form">
+                <label for="raster-file">Gunting Mas Rusdi</label>
+                <input
+                  id="raster-file"
+                  type="file"
+                  accept=".ecw,.tif,.tiff"
+                  required
+                />
+                <div class="two">
+                  <div>
+                    <label for="raster-min">Rusdi 1</label>
+                    <input
+                      id="raster-min"
+                      type="number"
+                      min="0"
+                      max="23"
+                      value="14"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label for="raster-max">Rusdi Final</label>
+                    <input
+                      id="raster-max"
+                      type="number"
+                      min="0"
+                      max="23"
+                      value="21"
+                      required
+                    />
+                  </div>
+                </div>
+                <label for="raster-crop">Sabar kau sukii</label>
+                <select id="raster-crop">
+                  <option value="true">Hidup sementara</option>
+                  <option value="false">Woilah wahyudi loh yaaa</option>
+                </select>
+                <p class="muted">
+                  Sebelum dipotong di RUSDI Barbershop khas NGAWI, Pilih gayanya dulu wokk.
+                  Potongan menyesuaikan Keinginan mas Gatot.
+                </p>
+                <button id="raster-submit" class="button primary">
+                  Commit wokk
+                </button>
+              </form>
+              <div class="imagery-progress">
+                <label for="raster-progress">
+                  Masnya loh yaa, sabar cikk :|
+                </label>
+                <progress id="raster-progress" max="100" value="0"></progress>
+                <p id="raster-status" class="muted">
+                  Mana ada, Penipuu anjeng!!!
+                </p>
+                <p
+                  id="raster-job-status"
+                  class="muted"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Pilih model dulu WOKK.
+                </p>
+              </div>
+            </section>
+            <section id="preview-panel" class="panel hidden">
+              <h2>Preview wowok teddy</h2>
+              <p id="preview-count"></p>
+              <div id="preview-list"></div>
+              <button id="commit" class="button primary">
+                Admin sudah Commit
+              </button>
+              <button id="cancel-preview" class="button outline">
+                Ndakjadi loh yaa...
+              </button>
+            </section>
+            <p class="muted">
+              Admin butuh member baik, dan member baik butuh Admin.
+            </p>
+          </div>
+        </section>
+      </section>
+    </main>
+    <!-- Contact information space -->
+    <footer id="contact-info" class="site-footer">
+  <div class="footer-main">
+    <section class="footer-brand">
+      <img
+        src="/static/SurabayaLogo.svg"
+        alt="Logo Surabaya"
+        class="footer-logo"
+      />
+
+      <p class="footer-kicker">Inventarisasi dan Analisis Spasial Makam</p>
+      <h2 class="footer-title">WebGIS TPU <span>KEPUTIH</span></h2>
+      <p>
+        Informasi lokasi dan pendataan makam di tiga blok
+        TPU Keputih, Surabaya.
+      </p>
+    </section>
+
+    <section>
+      <h2>Tim Pengembang</h2>
+      <p>Universitas Negeri Surabaya</p>
+      <p>PT Geosolution Pratama Nusantara</p>
+    </section>
+
+    <section class="footer-contact">
+      <h2>Info Kontak</h2>
+      <p>TPU Keputih, Surabaya, Jawa Timur</p>
+      <p>contohnya888@gmail.contoh</p>
+      <p>+62 812 3456 7890</p>
+    </section>
+  </div>
+
+  <div class="footer-bottom">
+    Copyright © 2026 WebGIS TPU KEPUTIH | All rights reserved.
+  </div>
+</footer>
+    <dialog id="detail-dialog" class="detail">
+      <button id="close-detail" class="close" aria-label="Tutup detail">
+        ×
+      </button>
+      <div id="detail-body"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite" class="toast hidden"></div>
+    <script src="/static/vendor/leaflet.js"></script>
+    <script src="/static/vendor/esri-leaflet.js?v=3.0.19"></script>
+    <script src="/static/infographics.js?v=7-nav"></script>
+    <script src="/static/app.js?v=7-nav"></script>
+  </body>
+</html>

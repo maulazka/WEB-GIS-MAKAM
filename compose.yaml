@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    environment:
+      POSTGRES_DB: keputih
+      POSTGRES_USER: keputih
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Jalankan scripts/setup_admin.py}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U keputih -d keputih"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://keputih:${POSTGRES_PASSWORD}@db:5432/keputih
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?Jalankan scripts/setup_admin.py}
+      COOKIE_SECURE: "true"
+      ORTHOPHOTO_TILE_URL: ${ORTHOPHOTO_TILE_URL:-}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - media_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  media_data:

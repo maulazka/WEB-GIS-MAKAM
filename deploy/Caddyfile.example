@@ -1,0 +1,8 @@
+# Ganti domain ini dengan domain milik Anda.
+makam.example.com {
+    request_body {
+        # File raster 6 GiB ditambah ruang untuk multipart.
+        max_size 6600MB
+    }
+    reverse_proxy 127.0.0.1:8000
+}
